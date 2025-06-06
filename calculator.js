@@ -1,6 +1,7 @@
 function crossfitApp() {
   return {
     currentView: "calculator",
+    theme: "system",
 
     exercises: [
       { key: "snatch", name: "Snatch" },
@@ -33,10 +34,62 @@ function crossfitApp() {
     progressionStep: 5,
 
     init() {
+      this.initTheme();
       this.loadFromStorage();
       this.initializeDefaults();
       this.updateAvailableWeights("kg");
       this.updateAvailableWeights("lb");
+    },
+
+    initTheme() {
+      const stored = localStorage.getItem("theme");
+      this.theme = stored || "system";
+      this.applyTheme();
+
+      // Escuchar cambios en el tema del sistema
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      mediaQuery.addEventListener("change", () => {
+        if (this.theme === "system") {
+          this.applyTheme();
+        }
+      });
+    },
+
+    applyTheme() {
+      const isDark =
+        this.theme === "dark" ||
+        (this.theme === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+      if (isDark) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    },
+
+    toggleTheme() {
+      const themes = ["system", "light", "dark"];
+      const currentIndex = themes.indexOf(this.theme);
+      this.theme = themes[(currentIndex + 1) % themes.length];
+      localStorage.setItem("theme", this.theme);
+      this.applyTheme();
+    },
+
+    getThemeIcon() {
+      return {
+        system: "🖥️",
+        light: "☀️",
+        dark: "🌙",
+      }[this.theme];
+    },
+
+    getThemeTitle() {
+      return {
+        system: "Cambiar a tema claro",
+        light: "Cambiar a tema oscuro",
+        dark: "Cambiar a tema sistema",
+      }[this.theme];
     },
 
     initializeDefaults() {
@@ -54,23 +107,25 @@ function crossfitApp() {
         availableWeightsInput: this.availableWeightsInput,
         barbellWeight: this.barbellWeight,
       };
-      // Simulate localStorage with in-memory storage for demo
-      window.appData = data;
-      localStorage.setItem("config-data", JSON.stringify(data));
+      localStorage.setItem("crossfit-config", JSON.stringify(data));
     },
 
     loadFromStorage() {
-      dataStr = localStorage.getItem("config-data");
-      data = JSON.parse(dataStr);
-      if (data) {
-        this.rms = data.rms || {};
-        this.rmUnits = data.rmUnits || {};
-        this.availableWeights = data.availableWeights || { kg: [], lb: [] };
-        this.availableWeightsInput = data.availableWeightsInput || {
-          kg: "",
-          lb: "",
-        };
-        this.barbellWeight = data.barbellWeight || { kg: 20, lb: 45 };
+      try {
+        const dataStr = localStorage.getItem("crossfit-config");
+        if (dataStr) {
+          const data = JSON.parse(dataStr);
+          this.rms = data.rms || {};
+          this.rmUnits = data.rmUnits || {};
+          this.availableWeights = data.availableWeights || { kg: [], lb: [] };
+          this.availableWeightsInput = data.availableWeightsInput || {
+            kg: "1.25, 2.5, 5, 10, 15, 20, 25",
+            lb: "2.5, 5, 10, 15, 25, 35, 45",
+          };
+          this.barbellWeight = data.barbellWeight || { kg: 20 };
+        }
+      } catch (e) {
+        console.error("Error loading from storage:", e);
       }
     },
 
@@ -94,7 +149,8 @@ function crossfitApp() {
 
       const targetWeight = (rm * percentage) / 100;
       const availablePlates = this.availableWeights[unit] || [];
-      const barbellWeight = this.barbellWeight[unit] || 0;
+      const barbellWeight =
+        this.barbellWeight[unit] || (unit === "kg" ? 20 : 45);
 
       if (availablePlates.length === 0) return "Configura pesos disponibles";
 

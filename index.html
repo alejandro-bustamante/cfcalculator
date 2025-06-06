@@ -8,10 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'media',
+            darkMode: 'class',
         }
     </script>
-    <script defer src="assets/alpinejs-3.14.9/cdn.min.js"></script>
+    <script defer src="alpinejs-3.14.9/cdn.min.js"></script>
     <style>
         [x-cloak] {
             display: none !important;
@@ -19,23 +19,30 @@
     </style>
 </head>
 
-<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300"
-    x-data="crossfitApp()" x-cloak>
+<body x-data="crossfitApp()" x-init="init()" x-cloak
+    :class="{ 'dark': theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) }"
+    class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen transition-colors duration-300">
 
     <!-- Navigation Bar -->
-    <nav class="bg-blue-600 text-white p-4 shadow-lg">
+    <nav class="bg-blue-600 dark:bg-blue-800 text-white p-4 shadow-lg">
         <div class="flex justify-between items-center max-w-6xl mx-auto">
             <h1 class="text-xl font-bold">CrossFit Calculator</h1>
-            <div class="flex space-x-2">
+            <div class="flex items-center space-x-2">
                 <button @click="currentView = 'calculator'"
-                    :class="currentView === 'calculator' ? 'bg-blue-800' : 'bg-blue-500'"
-                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    :class="currentView === 'calculator' ? 'bg-blue-800 dark:bg-blue-900' : 'bg-blue-500 dark:bg-blue-700'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-blue-700 dark:hover:bg-blue-600">
                     Calculadora
                 </button>
                 <button @click="currentView = 'config'"
-                    :class="currentView === 'config' ? 'bg-blue-800' : 'bg-blue-500'"
-                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    :class="currentView === 'config' ? 'bg-blue-800 dark:bg-blue-900' : 'bg-blue-500 dark:bg-blue-700'"
+                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-blue-700 dark:hover:bg-blue-600">
                     Configuración
+                </button>
+                <!-- Botón de cambio de tema -->
+                <button @click="toggleTheme()"
+                    class="ml-4 px-3 py-2 rounded-lg text-sm bg-blue-500 dark:bg-blue-700 hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors border border-blue-400 dark:border-blue-600"
+                    :title="getThemeTitle()">
+                    <span x-text="getThemeIcon()"></span>
                 </button>
             </div>
         </div>
@@ -58,10 +65,10 @@
                             <div class="flex">
                                 <input :id="exercise.key" type="number" x-model.number="rms[exercise.key]"
                                     @input="saveToStorage()"
-                                    class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                    class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white"
                                     :placeholder="'RM ' + exercise.name" />
                                 <select x-model="rmUnits[exercise.key]" @change="saveToStorage()"
-                                    class="px-3 py-3 bg-gray-50 dark:bg-gray-700 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white">
+                                    class="px-3 py-3 bg-gray-50 dark:bg-gray-700 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-gray-100">
                                     <option value="kg">kg</option>
                                     <option value="lb">lb</option>
                                 </select>
@@ -80,14 +87,14 @@
                             class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Kilogramos</label>
                         <input type="text" x-model="availableWeightsInput.kg" @input="updateAvailableWeights('kg')"
                             placeholder="Ej: 2.5, 5, 10, 15, 20, 25"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" />
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white" />
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Separa los pesos con comas</p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Libras</label>
                         <input type="text" x-model="availableWeightsInput.lb" @input="updateAvailableWeights('lb')"
                             placeholder="Ej: 5, 10, 15, 25, 35, 45"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" />
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white" />
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Separa los pesos con comas</p>
                     </div>
                 </div>
@@ -99,10 +106,10 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="flex">
                         <input type="number" x-model.number="barbellWeight.kg" @input="saveToStorage()"
-                            class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                            class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white"
                             placeholder="Peso barra kg" />
                         <span
-                            class="px-3 py-3 bg-gray-50 dark:bg-gray-700 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg text-gray-600 dark:text-white">kg</span>
+                            class="px-3 py-3 bg-gray-50 dark:bg-gray-700 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg text-gray-600 dark:text-gray-300">kg</span>
                     </div>
                 </div>
             </div>
@@ -120,7 +127,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Ejercicio</label>
                         <select x-model="selectedExercise"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white">
                             <template x-for="exercise in exercises" :key="exercise.key">
                                 <option :value="exercise.key" x-text="exercise.name"></option>
                             </template>
@@ -131,15 +138,16 @@
                         <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Porcentaje
                             (%)</label>
                         <input type="range" x-model.number="percentage" min="30" max="105" step="5"
-                            class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                            class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer slider">
                         <div class="flex justify-between text-sm text-gray-500 dark:text-gray-400 mt-1">
                             <span>30%</span>
-                            <span class="font-medium text-blue-600" x-text="percentage + '%'"></span>
+                            <span class="font-medium text-blue-600 dark:text-blue-400" x-text="percentage + '%'"></span>
                             <span>105%</span>
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg" x-show="rms[selectedExercise] > 0">
+                    <div class="bg-blue-50 dark:bg-blue-900/50 p-4 rounded-lg border dark:border-blue-800"
+                        x-show="rms[selectedExercise] > 0">
                         <div class="text-center">
                             <p class="text-sm text-gray-600 dark:text-gray-300">RM: <span
                                     x-text="rms[selectedExercise]"></span>
@@ -166,7 +174,7 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Ejercicio</label>
                         <select x-model="progressionExercise"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white">
                             <template x-for="exercise in exercises" :key="exercise.key">
                                 <option :value="exercise.key" x-text="exercise.name"></option>
                             </template>
@@ -178,13 +186,13 @@
                             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Desde
                                 (%)</label>
                             <input type="number" x-model.number="progressionStart" min="30" max="100"
-                                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" />
+                                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white" />
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Hasta
                                 (%)</label>
                             <input type="number" x-model.number="progressionEnd" min="30" max="105"
-                                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white" />
+                                class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white" />
                         </div>
                     </div>
 
@@ -192,7 +200,7 @@
                         <label class="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Incremento
                             (%)</label>
                         <select x-model.number="progressionStep"
-                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100 bg-white">
                             <option value="5">5%</option>
                             <option value="10">10%</option>
                             <option value="2.5">2.5%</option>
@@ -205,7 +213,8 @@
                     <div class="space-y-2 max-h-64 overflow-y-auto">
                         <template x-for="step in generateProgression()" :key="step.percentage">
                             <div class="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <span class="font-medium" x-text="step.percentage + '%'"></span>
+                                <span class="font-medium text-gray-800 dark:text-gray-200"
+                                    x-text="step.percentage + '%'"></span>
                                 <span class="text-gray-600 dark:text-gray-300"
                                     x-text="step.theoretical + ' ' + rmUnits[progressionExercise]"></span>
                                 <span class="font-semibold text-green-600 dark:text-green-400"
